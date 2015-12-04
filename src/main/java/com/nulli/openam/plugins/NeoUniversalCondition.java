@@ -1,14 +1,22 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * The contents of this file are subject to the terms of the Common Development and
+ * Distribution License (the License). You may not use this file except in compliance with the
+ * License.
+ *
+ * You can obtain a copy of the License at legal/CDDLv1.0.txt. See the License for the
+ * specific language governing permission and limitations under the License.
+ *
+ * When distributing Covered Software, include this CDDL Header Notice in each file and include
+ * the License file at legal/CDDLv1.0.txt. If applicable, add the following below the CDDL
+ * Header, with the fields enclosed by brackets [] replaced by your own identifying
+ * information: "Portions copyright [year] [name of copyright owner]".
+ *
+ * Copyright 2015 Nulli Secundus Inc.
  */
+
+
 package com.nulli.openam.plugins;
 
-/**
- *
- * @author hadi
- */
 import com.iplanet.log.ConnectionException;
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
@@ -58,11 +66,15 @@ import org.json.JSONObject;
 import sun.misc.BASE64Encoder;
 
 /**
+ * Neo4j-Universal Policy Environmental Condition Plugin for OpenAM
+ * 
  * An implementation of an
  * {@link com.sun.identity.entitlement.EntitlementCondition} that will check
- * whether the principal has authenticated to the specified service.
+ * whether the principal meets condition based on a parameterized cypher 
+ * query against a Neo4j graph dabatase.
  *
  * @since 12.0.0
+ * @author Hadi Ahmadi
  */
 public class NeoUniversalCondition implements EntitlementCondition {
 
@@ -319,20 +331,6 @@ public class NeoUniversalCondition implements EntitlementCondition {
         }
 
         return new ConditionDecision(false, advices); // This is a deny
-    }
-
-    /**
-     * Confirms that the String is in the format /:service, by validating that
-     * there is a colon in the String - as per
-     * {@link com.sun.identity.authentication.util.AMAuthUtils#getDataFromRealmQualifiedData}.
-     */
-    private String getRealmAwareService(String authenticateToService, String realm) {
-
-        if (!authenticateToService.contains(ISAuthConstants.COLON)) {
-            return realm + ISAuthConstants.COLON + authenticateToService;
-        }
-
-        return authenticateToService;
     }
 
     @Override

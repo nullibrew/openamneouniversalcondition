@@ -11,9 +11,11 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2014 ForgeRock AS.
+ * Copyright 2015 Nulli Secundus Inc.
  */
 package com.nulli.openam.plugins;
+
+
 
 import org.forgerock.openam.entitlement.EntitlementModule;
 import org.forgerock.openam.entitlement.EntitlementRegistry;

@@ -11,11 +11,11 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2014 ForgeRock AS.
+ * Copyright 2015 Nulli Secundus Inc.
  */
 
 /**
- * Neo policy evaluation plugin for use with OpenAM server.
+ * Nulli plugin code for use with OpenAM server. s
  */
 
 package com.nulli.openam.plugins;
