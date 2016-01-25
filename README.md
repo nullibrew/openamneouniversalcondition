@@ -66,7 +66,7 @@ Your custom policy plugin can now be used for new policy applications.
 
 ## Adding Custom Policy Implementations to Existing Policy Applications
 
-In order to use your custom policy in existing applications,
+In order to use the Neo Universal Condition policy in existing applications,
 you must update the applications.
 Note that you cannot update an application that already has policies configured.
 When there are already policies configured for an application,
@@ -148,7 +148,7 @@ Notice that the command adds `"NeoUniversal"` to `"conditions"`.
 
 ## Trying the Neo Universal Condition
 
-Set up and install Neo4j graph db and create appropriate nodes and relationships, so that allow/deny access can be mapped to a true or false from a Cypher-language query.
+Install and configure Neo4j graph db and create appropriate nodes and relationships, so that allow/deny access can be mapped to a true/false return value from a Cypher-language query. Also set up an Apache web server, say accessible via "http://www.example.com:80", which and index.html page as a resource for testing purposes.
 
 Using OpenAM policy editor, create a policy in the "iPlanetAMWebAgentService" of the top level realm
 that allows HTTP GET access to `"http://www.example.com:80/*"` and that makes use of the Neo Universal Condition.
