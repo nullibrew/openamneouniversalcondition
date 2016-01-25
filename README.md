@@ -148,7 +148,7 @@ Notice that the command adds `"NeoUniversal"` to `"conditions"`.
 
 ## Trying the Neo Universal Condition
 
-
+Set up and install Neo4j graph db and create appropriate nodes and relationships, so that allow/deny access can be mapped to a true or false from a Cypher-language query.
 
 Using OpenAM policy editor, create a policy in the "iPlanetAMWebAgentService" of the top level realm
 that allows HTTP GET access to `"http://www.example.com:80/*"` and that makes use of the Neo Universal Condition.
@@ -166,69 +166,17 @@ that allows HTTP GET access to `"http://www.example.com:80/*"` and that makes us
         },
         "condition": {
             "type": "NeoUniversal",
-            "dbURL": "DB Transactional Endpoint URL",
-            "dbUsername": "DB Username",
-            "dbPassword": "DB Password",
-            "cypherQuery": "Cypher Query",
-            "paramsJson": "Query Parameters (JSON)",
-            "allowCypherResult": "Cypher Result for Allow-Access",
-            "denyCypherResult": "Cypher Result for Deny-Access"
+            "dbURL": "[DB transactionl endpoint URL]",
+            "dbUsername": "[Neo4j username]",
+            "dbPassword": "[Neo4j password]",
+            "cypherQuery": "[Cypher-language query - assume it returns 'return' which is 'true' or 'false']",
+            "paramsJson": {"[PARAM_NAME]": "[PARAM_VALUE]", ...},
+            "allowCypherResult": "true",
+            "denyCypherResult": "false"
         }
     }
 
-With the policy in place, authenticate
-both as a user who can request policy decisions
-and also as a user trying to access a resource.
-Both of these calls return "tokenId" values
-for use in the policy decision request.
-
-    curl \
-     --request POST \
-     --header "X-OpenAM-Username: amadmin" \
-     --header "X-OpenAM-Password: password" \
-     --header "Content-Type: application/json" \
-     --data "{}" \
-     http://openam.example.com:8080/openam/json/authenticate
-
-     {"tokenId":"AQIC5wM2LY4Sfcw...","successUrl":"/openam/console"}
-
-    curl \
-     --request POST \
-     --header "X-OpenAM-Username: demo" \
-     --header "X-OpenAM-Password: changeit" \
-     --header "Content-Type: application/json" \
-     --data "{}" \
-     http://openam.example.com:8080/openam/json/authenticate
-
-     {"tokenId":"AQIC5wM2LY4Sfcy...","successUrl":"/openam/console"}
-
-Use the administrator token ID as the header of the policy decision request,
-and the user token Id as the subject "ssoToken" value.
-
-    curl \
-     --request POST \
-     --header "iPlanetDirectoryPro: AQIC5wM2LY4Sfcw..." \
-     --header "Content-Type: application/json" \
-     --data '{
-        "subject": {
-          "ssoToken": "AQIC5wM2LY4Sfcy..."},
-        "resources": [
-            "http://www.example.com:80/index.html"
-        ],
-        "application": "iPlanetAMWebAgentService"
-     }' \
-     http://openam.example.com:8080/openam/json/policies?_action=evaluate
-
-     [
-         {
-             "resource": "http://www.example.com:80/index.html",
-             "actions": {
-                 "GET": true
-             },
-             "attributes": {},
-             "advices": {}
-         }
-     ]
+To test the Neo Universal Condition plugin, try accessing the resource at "http://www.example.com:80/index.html", authenticate and see if access decision matches the condition enforced by the Neo Universal Plugin.
 
 
 
