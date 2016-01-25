@@ -146,21 +146,17 @@ in the top level realm of a fresh installation.
 Notice that the command adds `"NeoUniversal"` to `"conditions"`.
 
 
-## Trying the Environment Condition
-
-# 'TODO change the following for a graphDB example ....'
+## Trying the Neo Universal Condition
 
 
 
-Using OpenAM policy editor, create a policy
-in the "iPlanetAMWebAgentService" of the top level realm
-that allows HTTP GET access to `"http://www.example.com:80/*"`
-and that makes use of the custom subject and condition.
+Using OpenAM policy editor, create a policy in the "iPlanetAMWebAgentService" of the top level realm
+that allows HTTP GET access to `"http://www.example.com:80/*"` and that makes use of the Neo Universal Condition.
 
     {
-        "name": "Sample Policy",
+        "name": "Neo Policy",
         "active": true,
-        "description": "Try sample policy plugin",
+        "description": "Try Neo Universal Condition",
         "resources": [
             "http://www.example.com:80/*"
         ],
@@ -168,13 +164,15 @@ and that makes use of the custom subject and condition.
         "actionValues": {
             "GET": true
         },
-        "subject": {
-            "type": "SampleSubject",
-            "name": "demo"
-        },
         "condition": {
-            "type": "SampleCondition",
-            "nameLength": 4
+            "type": "NeoUniversal",
+            "dbURL": "DB Transactional Endpoint URL",
+            "dbUsername": "DB Username",
+            "dbPassword": "DB Password",
+            "cypherQuery": "Cypher Query",
+            "paramsJson": "Query Parameters (JSON)",
+            "allowCypherResult": "Cypher Result for Allow-Access",
+            "denyCypherResult": "Cypher Result for Deny-Access"
         }
     }
 
@@ -232,73 +230,7 @@ and the user token Id as the subject "ssoToken" value.
          }
      ]
 
-To use the custom resource attribute, add "resourceAttributes" to the policy.
 
-    curl \
-     --request PUT \
-     --header "iPlanetDirectoryPro: AQIC5wM2LY4Sfcw..." \
-     --header "Content-Type: application/json" \
-     --data '{
-        "name": "Sample Policy",
-        "active": true,
-        "description": "Try sample policy plugin",
-        "resources": [
-            "http://www.example.com:80/*"
-        ],
-        "applicationName": "iPlanetAMWebAgentService",
-        "actionValues": {
-            "GET": true
-        },
-        "subject": {
-            "type": "SampleSubject",
-            "name": "demo"
-        },
-        "condition": {
-            "type": "SampleCondition",
-            "nameLength": 4
-        },
-        "resourceAttributes": [
-            {
-                "type": "SampleAttribute",
-                "propertyName": "test"
-            }
-        ]
-    }' http://openam.example.com:8088/openam/json/policies/Sample%20Policy
-
-When you now request a policy decision,
-the plugin also returns the "test" attribute that you configured.
-
-    curl \
-     --request POST \
-     --header "iPlanetDirectoryPro: AQIC5wM2LY4Sfcw..." \
-     --header "Content-Type: application/json" \
-     --data '{
-        "subject": {
-          "ssoToken": "AQIC5wM2LY4Sfcy..."},
-        "resources": [
-            "http://www.example.com:80/index.html"
-        ],
-        "application": "iPlanetAMWebAgentService"
-     }' \
-     http://openam.example.com:8080/openam/json/policies?_action=evaluate
-
-    [
-        {
-            "resource": "http://www.example.com/profile",
-            "actions": {
-                "GET": true
-            },
-            "attributes": {
-                "test": [
-                    "sample"
-                ]
-            },
-            "advices": {}
-        }
-    ]
-
-If you made it this far, then you have successfully tested this plugin.
-Good luck building your own custom policy plugins!
 
 * * * * *
 
@@ -306,4 +238,3 @@ Everything in this repository is licensed under the ForgeRock CDDL license:
 <http://forgerock.org/license/CDDLv1.0.html>
 
 Copyright 2013-2014 ForgeRock AS
-
