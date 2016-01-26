@@ -1,16 +1,6 @@
 # OpenAM Universal Neo Policy Evaluation Plugin
 
-This project introduces an OpenAM plugin library
-that implements ....
-
-**Note**
-
-The current OpenAM version that the project depends on is OpenAM 13.0.0-SNAPSHOT, but the plugin has been tested to workwith OpenAM 12.0.0 and OpenAM 12.0.2 as well.
-
-
-## About the Plugin
-
-.... 
+This project introduces an OpenAM environment condition plugin, named Neo Universal Condition plugin, to be integrated and used by the OpenAM policy engine. The plugin interface allows IAM developers to write their own policy conditions via Neo4j Cypher query language. This provides OpenAM developers to practice graph-based access control and its effectiveness in many different authorization scenarios.
 
 
 ## Building the Plugin
@@ -25,6 +15,12 @@ The line to update is:
 Build the plugin using Apache Maven.
 
     mvn install
+
+**Note**
+
+The project build depends on is OpenAM 13.0.0-SNAPSHOT, but has been tested to work with OpenAM 12.0.0 and OpenAM 12.0.2 as well.
+
+The plugin has been tested to work with JDK 7 and 8 and on Apache Tomcat 7 as OpenAM Container.
 
 
 ## Installing the Plugin
