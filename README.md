@@ -20,7 +20,7 @@ Build the plugin using Apache Maven.
 
 The project build depends on is OpenAM 13.0.0-SNAPSHOT, but has been tested to work with OpenAM 12.0.0 and OpenAM 12.0.2 as well.
 
-The plugin has been tested to work with JDK 7 and 8 and on Apache Tomcat 7 as OpenAM Container.
+The plugin has been tested with JDK 7 and 8 using Apache Tomcat 7 as the OpenAM Container.
 
 
 ## Installing the Plugin
