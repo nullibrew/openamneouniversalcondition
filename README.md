@@ -20,7 +20,7 @@ Build the plugin using Apache Maven.
 
 The project build depends on is OpenAM 13.0.0-SNAPSHOT, but has been tested to work with OpenAM 12.0.0 and OpenAM 12.0.2 as well.
 
-The plugin has been tested with JDK 7 and 8 using Apache Tomcat 7 as the OpenAM Container.
+The plugin has been tested to work with JDK 7 and 8 and on Apache Tomcat 7 as OpenAM Container.
 
 
 ## Installing the Plugin
@@ -30,6 +30,7 @@ copy the library to the `WEB-INF/lib/` directory where you deployed OpenAM.
 For OpenAM deployed on Apache Tomcat under `/openam`:
 
     cp target/*.jar /path/to/tomcat/webapps/openam/WEB-INF/lib/
+    cp other/*.jar /path/to/tomcat/webapps/openam/WEB-INF/lib/
 
 Next, edit the `policyEditor/locales/en/translation.json` file
 to add the strings used by the policy editor
@@ -40,7 +41,7 @@ so that the policy editor shows the custom subject and condition.
        "NeoUniversal": {
               "title": "Neo Universal Condition",
               "props": {
-                  "dbURL": "DB Transactional Endpoint URL",
+                  "dbURL": "DB bolt Endpoint URL",
                   "dbUsername": "DB Username",
                   "dbPassword": "DB Password",
                   "cypherQuery": "Cypher Query",
@@ -58,6 +59,7 @@ Restart OpenAM or the container in which it runs.
     /path/to/tomcat/bin/startup.sh
 
 Your custom policy plugin can now be used for new policy applications.
+
 
 
 ## Adding Custom Policy Implementations to Existing Policy Applications
@@ -87,6 +89,10 @@ in the top level realm of a fresh installation.
      --header "Content-Type: application/json" \
      --data '{
         "name": "iPlanetAMWebAgentService",
+        "resourceTypeUuids": [
+        "76656a38-5f8e-401b-83aa-4ccb74ce88d2"
+        ],
+        "realm": "/",
         "resources": [
             "*://*:*/*?*",
             "*://*:*/*"
@@ -141,6 +147,12 @@ in the top level realm of a fresh installation.
 
 Notice that the command adds `"NeoUniversal"` to `"conditions"`.
 
+The `"resourceTypeUuids"` can be found using
+
+    curl \
+    --header "iPlanetDirectoryPro: AQIC5wM2LY4SfczmdAmN0Oh33heyIkja8....." \
+    --get --data-urlencode '_queryFilter=name co "URL"' http://openam.example.com:8088/openam/json/resourcetypes
+    
 
 ## Trying the Neo Universal Condition
 
@@ -162,7 +174,7 @@ that allows HTTP GET access to `"http://www.example.com:80/*"` and that makes us
         },
         "condition": {
             "type": "NeoUniversal",
-            "dbURL": "[DB transactionl endpoint URL]",
+            "dbURL": "[DB bolt endpoint URL]",
             "dbUsername": "[Neo4j username]",
             "dbPassword": "[Neo4j password]",
             "cypherQuery": "[Cypher-language query - assume it returns 'return' which is 'true' or 'false']",
@@ -172,7 +184,7 @@ that allows HTTP GET access to `"http://www.example.com:80/*"` and that makes us
         }
     }
 
-To test the Neo Universal Condition plugin, try accessing the resource at "http://www.example.com:80/index.html", authenticate and see if access decision matches the condition enforced by the Neo Universal Plugin.
+To test the Neo Universal Condition plugin, try accessing the resource at "http://www.example.com:80/index.html", authenticate and see if access decision matches the condition enforced by the Neo Universal Plugin. The bolt endpoint for neo4j on localhost is "bolt://localhost".
 
 
 
