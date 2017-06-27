@@ -348,8 +348,6 @@ public class NeoUniversalCondition implements EntitlementCondition {
         boolean requestHasParams = false;
         Map<String, String> reqParamMap = new LinkedHashMap<String, String>();
 
-        SSOToken token = (SSOToken) subject.getPrivateCredentials().iterator().next();
-
         if (resourceName.split("\\?").length > 1) {
             requestHasParams = true;
             String urlQuery = resourceName.split("\\?")[1];
@@ -361,8 +359,8 @@ public class NeoUniversalCondition implements EntitlementCondition {
         }
 
         try {
-        	if(!params.isEmpty()){
-               jsonParams = new JSONObject(params);
+            if (!params.isEmpty()) {
+                jsonParams = new JSONObject(params);
                 @SuppressWarnings("unchecked")
                 Iterator<String> paramItr = jsonParams.keys();
 
@@ -371,13 +369,12 @@ public class NeoUniversalCondition implements EntitlementCondition {
                     String paramVal = jsonParams.get(paramKey).toString();
                     if (paramVal.startsWith("__")) {
                         if (paramVal.equals("__userId")) {
-                            if (!subject.getPrincipals().isEmpty()) {
-                                String userId = getUserId(subject);
-                                jsonParams.put(paramKey, userId);
-                            } else {
+                            if (subject.getPrincipals().isEmpty()) {
                                 throw new EntitlementException(
                                         EntitlementException.CONDITION_EVALUATION_FAILED,
                                         "could not find userId (required) from subject");
+                            } else {
+                                jsonParams.put(paramKey, getUserId(subject));
                             }
                         } else if (paramVal.equals("__resourceName")) {
                             jsonParams.put(paramKey, resourceName);
@@ -387,15 +384,23 @@ public class NeoUniversalCondition implements EntitlementCondition {
                             String envParam = paramVal.substring(7);
                             String envParamVal = envMapStringify(envParam, env.get(envParam));
                             jsonParams.put(paramKey, envParamVal);
-                        } else if (paramVal.startsWith("__token__")) {
-                            String tokenProp = paramVal.substring(7);
-                            String tokenPropVal = token.getProperty(tokenProp);
-                            jsonParams.put(paramKey, tokenPropVal);
-                        } else if (paramVal.startsWith("__token.")) {
-                            String tokenMethod = paramVal.substring(6);
-                            java.lang.reflect.Method method = token.getClass().getMethod(tokenMethod);
-                            String methodRet = method.invoke(token).toString();
-                            jsonParams.put(paramKey, methodRet);
+                        } else if (paramVal.startsWith("__token")) {
+                            if (subject.getPrivateCredentials().isEmpty()) {
+                                throw new EntitlementException(
+                                        EntitlementException.CONDITION_EVALUATION_FAILED,
+                                        "could not find token (required) from subject");
+                            }
+                            SSOToken token = (SSOToken) subject.getPrivateCredentials().iterator().next();
+                            if (paramVal.startsWith("__token__")) {
+                                String tokenProp = paramVal.substring(7);
+                                String tokenPropVal = token.getProperty(tokenProp);
+                                jsonParams.put(paramKey, tokenPropVal);
+                            } else if (paramVal.startsWith("__token.")) {
+                                String tokenMethod = paramVal.substring(6);
+                                java.lang.reflect.Method method = token.getClass().getMethod(tokenMethod);
+                                String methodRet = method.invoke(token).toString();
+                                jsonParams.put(paramKey, methodRet);
+                            }
                         } else if (paramVal.startsWith("__req__") && requestHasParams) {
                             String reqParam = paramVal.substring(7);
                             if (reqParamMap.containsKey(reqParam)) {
@@ -405,9 +410,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
                         }
                     }
                 }
-        		
-        	}
-
+            }
         } catch (JSONException ex) {
             Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SSOException ex) {
@@ -559,16 +562,14 @@ public class NeoUniversalCondition implements EntitlementCondition {
 
     private String getUserId(Subject subject) throws EntitlementException {
         Principal principal = subject.getPrincipals().iterator().next();
-        String userDn = principal.getName();
-        int start = userDn.indexOf('=');
-        int end = userDn.indexOf(',');
-        if (end <= start) {
-            throw new EntitlementException(
-                    EntitlementException.CONDITION_EVALUATION_FAILED,
-                    "Name is not a valid DN: " + userDn);
+        String subjectName = principal.getName();
+        int start = subjectName.indexOf('=');
+        int end = subjectName.indexOf(',');
+        if (start > -1 && end > -1) { // valid userDn type input for repo users
+            return subjectName.substring(start + 1, end);
+        } else { // sibjectName from jwtToken or OIDC claim
+            return subjectName;
         }
-        String userId = userDn.substring(start + 1, end);
-        return userId;
     }
 
 }
