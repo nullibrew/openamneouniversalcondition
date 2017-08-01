@@ -186,6 +186,17 @@ that allows HTTP GET access to `"http://www.example.com:80/*"` and that makes us
 
 To test the Neo Universal Condition plugin, try accessing the resource at "http://www.example.com:80/index.html", authenticate and see if access decision matches the condition enforced by the Neo Universal Plugin. The bolt endpoint for neo4j on localhost is "bolt://localhost".
 
+### Supported Parameters
+The "cypherQuery" field of the Policy Neo4jUniversalCondition can be parameterized, i.e., it uses [PARAM\_NAME]'s and these params are declared in the "paramsJson" which holds a mapping of [PARAM\_NAME] to [PARAM\_VALUE] pairs. Here is the list of [PARAM\_VALUE]'s that can be passed.
+
+* "\_\_userId": uid of the subject requesting access
+*"\_\_resourceName": requested resource (e.g., URL)
+*"\_\_realm": openam realm
+*"\_\_env\_\_{{XX}}": request environment parameter XX
+*"\_\_token\_\_{{XX}}": SSO Token property XX (for authenticated subjects only)
+*"\_\_token.{{XX}}": SSO Token method XX (for authenticated subjects only)
+*"\_\_req\_\_{{XX}}": request parameter XX (if applicable)
+
 
 
 * * * * *
