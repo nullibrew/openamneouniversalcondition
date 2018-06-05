@@ -374,7 +374,9 @@ public class NeoUniversalCondition implements EntitlementCondition {
                                         EntitlementException.CONDITION_EVALUATION_FAILED,
                                         "could not find userId (required) from subject");
                             } else {
-                                jsonParams.put(paramKey, getUserId(subject));
+                                String userID = getUserId(subject);
+                                userID = (String) javax.naming.ldap.Rdn.unescapeValue(userID);
+                                jsonParams.put(paramKey, userID);
                             }
                         } else if (paramVal.equals("__resourceName")) {
                             jsonParams.put(paramKey, resourceName);
