@@ -22,7 +22,6 @@ import com.iplanet.log.ConnectionException;
 
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
-import com.sun.identity.authentication.util.ISAuthConstants;
 import com.sun.identity.entitlement.ConditionDecision;
 import com.sun.identity.entitlement.EntitlementCondition;
 import com.sun.identity.entitlement.EntitlementException;
@@ -31,20 +30,12 @@ import static com.sun.identity.entitlement.EntitlementException.PROPERTY_VALUE_N
 
 import com.sun.identity.entitlement.PrivilegeManager;
 import com.sun.identity.shared.debug.Debug;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,10 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import com.iplanet.log.ConnectionException;
 import javax.security.auth.Subject;
-
-import org.apache.commons.codec.binary.Base64;
 import org.forgerock.openam.core.CoreWrapper;
 
 import static org.forgerock.openam.entitlement.conditions.environment.ConditionConstants.*;
@@ -64,14 +52,9 @@ import org.forgerock.openam.entitlement.conditions.environment.EntitlementCoreWr
 import org.forgerock.openam.utils.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import sun.misc.BASE64Encoder;
 import org.neo4j.driver.v1.*;
 import org.neo4j.driver.v1.exceptions.*;
-
-import java.util.ArrayList;
-import java.util.List;
-
+import org.neo4j.driver.v1.exceptions.SecurityException;
 
 /**
  * Neo4j-Universal Policy Environmental Condition Plugin for OpenAM
@@ -110,7 +93,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
     private String allowCypherResult = null;
     private String denyCypherResult = null;
 
-    private boolean realmEmpty = false;
+//    private boolean realmEmpty = false;
     private String displayType;
 
     /**
