@@ -22,7 +22,6 @@ import com.iplanet.log.ConnectionException;
 
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
-import com.sun.identity.authentication.util.ISAuthConstants;
 import com.sun.identity.entitlement.ConditionDecision;
 import com.sun.identity.entitlement.EntitlementCondition;
 import com.sun.identity.entitlement.EntitlementException;
@@ -31,31 +30,21 @@ import static com.sun.identity.entitlement.EntitlementException.PROPERTY_VALUE_N
 
 import com.sun.identity.entitlement.PrivilegeManager;
 import com.sun.identity.shared.debug.Debug;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.net.URI;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import com.iplanet.log.ConnectionException;
 import javax.security.auth.Subject;
-
-import org.apache.commons.codec.binary.Base64;
 import org.forgerock.openam.core.CoreWrapper;
 
 import static org.forgerock.openam.entitlement.conditions.environment.ConditionConstants.*;
@@ -64,14 +53,10 @@ import org.forgerock.openam.entitlement.conditions.environment.EntitlementCoreWr
 import org.forgerock.openam.utils.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import sun.misc.BASE64Encoder;
 import org.neo4j.driver.v1.*;
+import org.neo4j.driver.internal.InternalDriver;
 import org.neo4j.driver.v1.exceptions.*;
-
-import java.util.ArrayList;
-import java.util.List;
-
+import org.neo4j.driver.v1.exceptions.SecurityException;
 
 /**
  * Neo4j-Universal Policy Environmental Condition Plugin for OpenAM
@@ -82,7 +67,7 @@ import java.util.List;
  * query against a Neo4j graph dabatase.
  *
  * @since 12.0.0
- * @author Hadi Ahmadi
+ * @author Hadi Ahmadi, Seyed Hossein Ahmadinejad
  */
 public class NeoUniversalCondition implements EntitlementCondition {
 
@@ -91,13 +76,14 @@ public class NeoUniversalCondition implements EntitlementCondition {
     private static final String NEO_DB_PASSWORD = "neoDbPassword";
     private static final String NEO_CYPHER_QUERY = "neoCypherQuery";
     private static final String NEO_QUERY_PARAMS = "neoQueryParams";
+    private static final String NEO_INLINE_PARAMS = "neoInlineParams";
     // TODO Add policy advice support
     //private static final String NEO_ADVICE_MAP = "neoAdviceMap";
     private static final String NEO_ALLOW_RESULT = "neoAllowResult";
     private static final String NEO_DENY_RESULT = "neoDenyResult";
-
-    private final Debug debug;
+    private static final int QUERY_EXECUTION_MAX_RETRY = 2;
     private final CoreWrapper coreWrapper;
+    private final Debug debug;
     private final EntitlementCoreWrapper entitlementCoreWrapper;
     private Driver driver;
 
@@ -106,11 +92,9 @@ public class NeoUniversalCondition implements EntitlementCondition {
     private String dbPassword = null;
     private String cypherQuery = null;
     private String paramsJson = null;
-    //private String adviceMapJson = null;
+    private String inlineParams = null;
     private String allowCypherResult = null;
     private String denyCypherResult = null;
-
-    private boolean realmEmpty = false;
     private String displayType;
 
     /**
@@ -151,66 +135,68 @@ public class NeoUniversalCondition implements EntitlementCondition {
         this.displayType = displayType;
     }
 
-    public String getDbURL() {
-        return dbURL;
-    }
-
     public void setDbURL(String dbURL) {
         this.dbURL = dbURL;
     }
 
-    public String getDbUsername() {
-        return dbUsername;
+    public String getDbURL() {
+        return dbURL;
     }
 
     public void setDbUsername(String dbUsername) {
         this.dbUsername = dbUsername;
     }
 
-    public String getDbPassword() {
-        return dbPassword;
+    public String getDbUsername() {
+        return dbUsername;
     }
 
     public void setDbPassword(String dbPassword) {
         this.dbPassword = dbPassword;
     }
 
-    public String getCypherQuery() {
-        return cypherQuery;
+    public String getDbPassword() {
+        return dbPassword;
     }
 
     public void setCypherQuery(String cypherQuery) {
         this.cypherQuery = cypherQuery;
     }
 
+    public String getCypherQuery() {
+        return cypherQuery;
+    }
+
+    public void setParamsJson(String paramsJson) {
+        this.paramsJson = paramsJson;
+    }
+
     public String getParamsJson() {
         return paramsJson;
     }
 
-    public void setParamsJson(String ParamsJson) {
-        this.paramsJson = ParamsJson;
+    public void setInlineParams(String inlineParams) {
+        this.inlineParams = inlineParams;
     }
 
-    /*public String getAdviceMapJson() {
-     return adviceMapJson;
-     }*/
-    public String getAllowCypherResult() {
-        return allowCypherResult;
+    public String getInlineParams() {
+        return inlineParams;
     }
 
-    /* public void setAdviceMapJson(String adviceMapJson) {
-     this.adviceMapJson = adviceMapJson;
-     }*/
     public void setAllowCypherResult(String allowCypherResult) {
         this.allowCypherResult = allowCypherResult;
     }
 
-    public String getDenyCypherResult() {
-        return denyCypherResult;
+    public String getAllowCypherResult() {
+        return allowCypherResult;
     }
 
     public void setDenyCypherResult(String denyCypherResult) {
         this.denyCypherResult = denyCypherResult;
+    }
+
+    public String getDenyCypherResult() {
+        return denyCypherResult;
     }
 
     @Override
@@ -226,9 +212,9 @@ public class NeoUniversalCondition implements EntitlementCondition {
                 setCypherQuery(getInitStringValue(map.get(key)));
             } else if (key.equalsIgnoreCase(NEO_QUERY_PARAMS)) {
                 setParamsJson(getStringValue(map.get(key)));
-            } /*else if (key.equalsIgnoreCase(NEO_ADVICE_MAP)) {
-             setAdviceMapJson(getStringValue(map.get(key)));
-             } */ else if (key.equalsIgnoreCase(NEO_ALLOW_RESULT)) {
+            } else if (key.equalsIgnoreCase(NEO_INLINE_PARAMS)) {
+                setInlineParams(getStringValue(map.get(key)));
+            } else if (key.equalsIgnoreCase(NEO_ALLOW_RESULT)) {
                 setAllowCypherResult(getStringValue(map.get(key)));
             } else if (key.equalsIgnoreCase(NEO_DENY_RESULT)) {
                 setDenyCypherResult(getStringValue(map.get(key)));
@@ -248,11 +234,11 @@ public class NeoUniversalCondition implements EntitlementCondition {
             jo.put(NEO_DB_PASSWORD, dbPassword);
             jo.put(NEO_CYPHER_QUERY, cypherQuery);
             jo.put(NEO_QUERY_PARAMS, paramsJson);
-            //  jo.put(NEO_ADVICE_MAP, adviceMapJson);
+            jo.put(NEO_INLINE_PARAMS, inlineParams);
             jo.put(NEO_ALLOW_RESULT, allowCypherResult);
             jo.put(NEO_DENY_RESULT, denyCypherResult);
         } catch (JSONException ex) {
-            Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, null, ex);
+            debug.error("OpenAM Neo4j Policy Plugin: failed to get state - " + ex.getMessage());
         }
         return jo.toString();
     }
@@ -285,9 +271,9 @@ public class NeoUniversalCondition implements EntitlementCondition {
             if (jo.has(NEO_QUERY_PARAMS)) {
                 setParamsJson(jo.getString(NEO_QUERY_PARAMS));
             }
-            /* if (jo.has(NEO_ADVICE_MAP)) {
-             setAdviceMapJson(jo.getString(NEO_ADVICE_MAP));
-             }*/
+            if (jo.has(NEO_INLINE_PARAMS)) {
+                setInlineParams(jo.getString(NEO_INLINE_PARAMS));
+            }
             if (jo.has(NEO_ALLOW_RESULT)) {
                 setAllowCypherResult(jo.getString(NEO_ALLOW_RESULT));
             }
@@ -296,7 +282,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
             }
 
         } catch (JSONException e) {
-            debug.message("NeoUniversalCondition: Failed to set state", e);
+            debug.error("OpenAM Neo4j Policy Plugin: failed to set state - " + e.getMessage());
         }
     }
 
@@ -308,20 +294,16 @@ public class NeoUniversalCondition implements EntitlementCondition {
     public ConditionDecision evaluate(String realm, Subject subject, String resourceName, Map<String, Set<String>> env)
             throws EntitlementException {
 
-        Map<String, Set<String>> advices = new HashMap<String, Set<String>>();
+        Map<String, Set<String>> advices = new HashMap<>();
 
-        if (!subject.getPrincipals().isEmpty() && paramsJson !=null) {
+        if (!subject.getPrincipals().isEmpty()) {
             try {
-
-                String cypherResult = null;
-
-                JSONObject params = sanitizeParams(paramsJson, realm, subject, resourceName, env);
-                cypherResult = neoQuery(cypherQuery, params);
-
+                String cypherResult;
+                HashMap<String, Object> params = sanitizeParams(paramsJson, realm, subject, resourceName, env);
+                cypherResult = neoQuery( (inlineParams == null) || inlineParams.isEmpty() ? cypherQuery : replaceInlineParams(cypherQuery, inlineParams.split(","), params), params, 1);
                 if (cypherResult == null) {
                     throw new ConnectionException("Error response received from the Graph DB while querying NeoClientType!");
                 }
-
                 if (cypherResult.equalsIgnoreCase(allowCypherResult)) {
                     return new ConditionDecision(true, advices);
                 } else if (cypherResult.equalsIgnoreCase(denyCypherResult)) {
@@ -329,7 +311,10 @@ public class NeoUniversalCondition implements EntitlementCondition {
                 }
             }
             catch (ConnectionException ex) {
-                Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, null, ex);
+                debug.error("OpenAM Neo4j Policy Plugin: Connection to Neo4j failed - " + ex.getMessage());
+            }
+            catch (JSONException ex) {
+                debug.error("OpenAM Neo4j Policy Plugin:Cannot parse parameters in the policy evaluation request body - " + ex.getMessage());
             }
         }
 
@@ -343,10 +328,26 @@ public class NeoUniversalCondition implements EntitlementCondition {
         }
     }
 
-    private JSONObject sanitizeParams(String params, String realm, Subject subject, String resourceName, Map<String, Set<String>> env) throws EntitlementException {
+    /**
+     * @param cypherQuery
+     * @param inlineParams
+     * @param params
+     * @return cypher query where parameters in inlineParams have been replaced with their values from params
+     * @throws JSONException
+     */
+    private String replaceInlineParams(String cypherQuery, String[] inlineParams, HashMap<String, Object> params) throws JSONException {
+        for (String inlineParam: inlineParams) {
+            String paramValue = "'" + params.get(inlineParam).toString() + "'";
+            cypherQuery = cypherQuery.replace("{" + inlineParam + "}", paramValue).replace("$" + inlineParam, paramValue);
+        }
+        return cypherQuery;
+    }
+
+    private HashMap<String, Object> sanitizeParams(String params, String realm, Subject subject, String resourceName, Map<String, Set<String>> env) throws EntitlementException {
         JSONObject jsonParams = null;
+        HashMap<String, Object> sanitizedParams = null;
         boolean requestHasParams = false;
-        Map<String, String> reqParamMap = new LinkedHashMap<String, String>();
+        Map<String, String> reqParamMap = new LinkedHashMap<>();
 
         if (resourceName.split("\\?").length > 1) {
             requestHasParams = true;
@@ -360,6 +361,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
 
         try {
             if (!params.isEmpty()) {
+                sanitizedParams = new HashMap<>();
                 jsonParams = new JSONObject(params);
                 @SuppressWarnings("unchecked")
                 Iterator<String> paramItr = jsonParams.keys();
@@ -376,16 +378,16 @@ public class NeoUniversalCondition implements EntitlementCondition {
                             } else {
                                 String userID = getUserId(subject);
                                 userID = (String) javax.naming.ldap.Rdn.unescapeValue(userID);
-                                jsonParams.put(paramKey, userID);
+                                paramVal = userID;
                             }
                         } else if (paramVal.equals("__resourceName")) {
-                            jsonParams.put(paramKey, resourceName);
+                            paramVal = resourceName;
                         } else if (paramVal.equals("__realm")) {
-                            jsonParams.put(paramKey, realm);
+                            paramVal = realm;
                         } else if (paramVal.startsWith("__env__")) {
                             String envParam = paramVal.substring(7);
                             String envParamVal = envMapStringify(envParam, env.get(envParam));
-                            jsonParams.put(paramKey, envParamVal);
+                            paramVal = envParamVal;
                         } else if (paramVal.startsWith("__token")) {
                             if (subject.getPrivateCredentials().isEmpty()) {
                                 throw new EntitlementException(
@@ -396,40 +398,28 @@ public class NeoUniversalCondition implements EntitlementCondition {
                             if (paramVal.startsWith("__token__")) {
                                 String tokenProp = paramVal.substring(7);
                                 String tokenPropVal = token.getProperty(tokenProp);
-                                jsonParams.put(paramKey, tokenPropVal);
+                                paramVal = tokenPropVal;
                             } else if (paramVal.startsWith("__token.")) {
                                 String tokenMethod = paramVal.substring(6);
                                 java.lang.reflect.Method method = token.getClass().getMethod(tokenMethod);
                                 String methodRet = method.invoke(token).toString();
-                                jsonParams.put(paramKey, methodRet);
+                                paramVal = methodRet;
                             }
                         } else if (paramVal.startsWith("__req__") && requestHasParams) {
                             String reqParam = paramVal.substring(7);
                             if (reqParamMap.containsKey(reqParam)) {
                                 String reqParamVal = reqParamMap.get(reqParam);
-                                jsonParams.put(paramKey, reqParamVal);
+                                paramVal = reqParamVal;
                             }
                         }
                     }
+                    sanitizedParams.put(paramKey, paramVal);
                 }
             }
-        } catch (JSONException ex) {
-            Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SSOException ex) {
-            Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (NoSuchMethodException ex) {
-            Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SecurityException ex) {
-            Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalArgumentException ex) {
-            Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InvocationTargetException ex) {
-            Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (JSONException | SSOException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException  ex) {
+            debug.error("OpenAM Neo4j Policy Plugin: " + ex.getMessage());
         }
-
-        return jsonParams;
+        return sanitizedParams;
     }
 
     public String getRequestIp(Map<String, Set<String>> env) {
@@ -441,7 +431,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
             Set<String> requestIpSet = (Set<String>) requestIp;
             if (!requestIpSet.isEmpty()) {
                 if (requestIpSet.size() > 1) {
-                    debug.warning("Environment map {0} cardinality > 1. Using first from: {1}",
+                    debug.warning("OpenAM Neo4j Policy Plugin: Environment map {0} cardinality > 1. Using first from: {1}",
                             REQUEST_IP, requestIpSet);
                 }
                 ip = requestIpSet.iterator().next();
@@ -451,89 +441,78 @@ public class NeoUniversalCondition implements EntitlementCondition {
         }
 
         if (StringUtils.isBlank(ip)) {
-            debug.warning("Environment map {0} is null or empty", REQUEST_IP);
+            debug.warning("OpenAM Neo4j Policy Plugin: Environment map {0} is null or empty", REQUEST_IP);
         }
         return ip;
     }
 
 
-    private String neoQuery(String statement, JSONObject params){
+    private String neoQuery(String statement, HashMap<String, Object> params, int retry){
         // TODO Auto-generated method stub
-        driver = getDriver(dbURL, dbUsername, dbPassword);
+        driver = getDriver();
         Session session = null;
-        StatementResult result =null;
-        if(params != null){
-            String[] parameters = params.toString().substring(1, params.toString().length()-1).split("\\,|\\:");
-            Object[] endparams = new Object[parameters.length];
-            for(int i=0; i< parameters.length; i++){
-                endparams[i] =parameters[i].substring(1, parameters[i].length()-1);
-            }
-            try{
-                session = driver.session();
-                result = session.run(statement, Values.parameters(endparams));
-                List<String> results = new ArrayList<String>();
-                while ( result.hasNext() )
-                {
-                    Record record = result.next();
+        StatementResult result;
 
-                    for ( String key : record.keys() )
-
-                    {
-                        results.add(record.get(key).asString());
-                    }
-                }
-                if(!results.isEmpty()){
-                    return results.get(0);
-                }
-
-            } catch(NoSuchRecordException ne){
-                debug.error("No records returned");
-            } catch(Neo4jException e){
-                debug.message("Error while connecting to neo4j " + e.getMessage());
-            }
-            finally {
-                if(session != null)
-                    session.close();
-            }
-        	
-        } else {
-
-            try{
-                session = driver.session();
+        try {session = driver.session(AccessMode.READ);
+            if(params != null)
+                result = session.run(statement, params);
+            else
                 result = session.run(statement);
-                List<String> results = new ArrayList<String>();
-                while ( result.hasNext() )
-                {
-                    Record record = result.next();
-
-                    for ( String key : record.keys() )
-
-                    {
-                        results.add(record.get(key).asString());
-                    }
-                }
-                if(!results.isEmpty()){
-                    return results.get(0);
-                }
-
-            } catch(NoSuchRecordException ne){
-                debug.error("No records returned");
-            } catch(Neo4jException e){
-                debug.message("Error while connecting to neo4j " + e.getMessage());
-            } finally {
-                if(session != null)
-                    session.close();
+            List<String> results = new ArrayList<>();
+            while ( result.hasNext() )
+            {
+                Record record = result.next();
+                for ( String key : record.keys() )
+                    results.add(record.get(key).asString());
+            }
+            if(!results.isEmpty()){
+                return results.get(0);
+            }
+        } catch(NoSuchRecordException ne){
+            debug.error("OpenAM Neo4j Policy Plugin: No records returned - " + ne.getMessage());
+        } catch(Neo4jException | IllegalStateException e){
+            debug.message("Error while connecting to neo4j: " + e.getMessage());
+            debug.error("OpenAM Neo4j Policy Plugin: Error while connecting to neo4j:  - " + e.getMessage());
+            if (retry < this.QUERY_EXECUTION_MAX_RETRY) {
+                debug.error("OpenAM Neo4j Policy Plugin: retrying ... ");
+                closeDriver(driver);
+                driver = null;
+                return neoQuery(statement, params, ++retry);
             }
         }
-
+        finally {
+            if(session != null)
+                session.close();
+        }
         return null;
     }
 
-    private Driver getDriver(String dbURL2, String dbUsername2, String dbPassword2) {
+    private void closeDriver(Driver driver) {
+        try {
+            driver.close();
+        } catch (Exception e) {
+            debug.warning("OpenAM Neo4j Policy Plugin: Error trying to close connection:  - " + e.getMessage());
+        }
+    }
+
+    private Driver getDriver() {
+        Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, "hello this is Logger");
         // TODO Auto-generated method stub
-        if(driver != null)
+        if (driver != null)
             return driver;
-        driver = GraphDatabase.driver(dbURL, AuthTokens.basic( dbUsername, dbPassword) );
+        debug.message("OpenAM Neo4j Policy Plugin: Creatnig a new driver");
+        if (dbURL.contains("bolt+routing")) {
+            String[] uris = dbURL.split(",");
+            List<URI> uriList = new ArrayList<>();
+            for (String uri: uris) {
+                uriList.add(URI.create(uri));
+            }
+            driver = GraphDatabase.routingDriver(uriList, AuthTokens.basic( dbUsername, dbPassword), Config.build().withLogging(Logging.console(Level.INFO)).toConfig());
+        }
+        else {
+            driver = GraphDatabase.driver(dbURL, AuthTokens.basic( dbUsername, dbPassword) );
+        }
+
         return driver;
 
     }
@@ -546,7 +525,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
             Set<String> envMapSet = (Set<String>) envMap;
             if (!envMapSet.isEmpty()) {
                 if (envMapSet.size() > 1) {
-                    debug.warning("Environment map {0} cardinality > 1. Using first from: {1}", param,
+                    debug.warning("OpenAM Neo4j Policy Plugin: Environment map {0} cardinality > 1. Using first from: {1}", param,
                             envMapSet);
                 }
                 envMapStr = envMapSet.iterator().next();
@@ -556,7 +535,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
         }
 
         if (StringUtils.isBlank(envMapStr)) {
-            debug.warning("Environment map {0} is null or empty", param);
+            debug.warning("OpenAM Neo4j Policy Plugin: Environment map {0} is null or empty", param);
         }
         return envMapStr;
 
@@ -573,5 +552,6 @@ public class NeoUniversalCondition implements EntitlementCondition {
             return subjectName;
         }
     }
+
 
 }
