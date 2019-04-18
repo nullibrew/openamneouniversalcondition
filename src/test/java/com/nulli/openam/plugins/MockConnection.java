@@ -10,9 +10,9 @@ import com.iplanet.sso.SSOToken;
 public class MockConnection {
 
 	public void setDBConnection(NeoUniversalCondition testClass){
-    	String NEO_DB_URL = "bolt://neo4j.centos.com";
+    	String NEO_DB_URL = "bolt://localhost:7687";
         String NEO_DB_USERNAME = "neo4j";
-        String NEO_DB_PASSWORD = "Test1234";
+        String NEO_DB_PASSWORD = "Welcome1";
         String NEO_ALLOW_RESULT = "true";
         String NEO_DENY_RESULT = "false"; 
     	testClass.setDbURL(NEO_DB_URL);

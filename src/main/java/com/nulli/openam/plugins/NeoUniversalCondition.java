@@ -59,7 +59,7 @@ import org.neo4j.driver.v1.exceptions.*;
 import org.neo4j.driver.v1.exceptions.SecurityException;
 
 /**
- * Neo4j-Universal Policy Environmental Condition Plugin for OpenAM
+ * Neo4j-Universal Policy Environmental Condition Plugin for AM
  *
  * An implementation of an
  * {@link com.sun.identity.entitlement.EntitlementCondition} that will check
@@ -238,7 +238,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
             jo.put(NEO_ALLOW_RESULT, allowCypherResult);
             jo.put(NEO_DENY_RESULT, denyCypherResult);
         } catch (JSONException ex) {
-            debug.error("OpenAM Neo4j Policy Plugin: failed to get state - " + ex.getMessage());
+            debug.error("AM Neo4j Policy Plugin: failed to get state - " + ex.getMessage());
         }
         return jo.toString();
     }
@@ -282,7 +282,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
             }
 
         } catch (JSONException e) {
-            debug.error("OpenAM Neo4j Policy Plugin: failed to set state - " + e.getMessage());
+            debug.error("AM Neo4j Policy Plugin: failed to set state - " + e.getMessage());
         }
     }
 
@@ -311,10 +311,10 @@ public class NeoUniversalCondition implements EntitlementCondition {
                 }
             }
             catch (ConnectionException ex) {
-                debug.error("OpenAM Neo4j Policy Plugin: Connection to Neo4j failed - " + ex.getMessage());
+                debug.error("AM Neo4j Policy Plugin: Connection to Neo4j failed - " + ex.getMessage());
             }
             catch (JSONException ex) {
-                debug.error("OpenAM Neo4j Policy Plugin:Cannot parse parameters in the policy evaluation request body - " + ex.getMessage());
+                debug.error("AM Neo4j Policy Plugin:Cannot parse parameters in the policy evaluation request body - " + ex.getMessage());
             }
         }
 
@@ -360,7 +360,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
         }
 
         try {
-            if (!params.isEmpty()) {
+            if ((params != null) && (!params.isEmpty())) {
                 sanitizedParams = new HashMap<>();
                 jsonParams = new JSONObject(params);
                 @SuppressWarnings("unchecked")
@@ -417,7 +417,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
                 }
             }
         } catch (JSONException | SSOException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException  ex) {
-            debug.error("OpenAM Neo4j Policy Plugin: " + ex.getMessage());
+            debug.error("AM Neo4j Policy Plugin: " + ex.getMessage());
         }
         return sanitizedParams;
     }
@@ -431,7 +431,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
             Set<String> requestIpSet = (Set<String>) requestIp;
             if (!requestIpSet.isEmpty()) {
                 if (requestIpSet.size() > 1) {
-                    debug.warning("OpenAM Neo4j Policy Plugin: Environment map {0} cardinality > 1. Using first from: {1}",
+                    debug.warning("AM Neo4j Policy Plugin: Environment map {0} cardinality > 1. Using first from: {1}",
                             REQUEST_IP, requestIpSet);
                 }
                 ip = requestIpSet.iterator().next();
@@ -441,7 +441,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
         }
 
         if (StringUtils.isBlank(ip)) {
-            debug.warning("OpenAM Neo4j Policy Plugin: Environment map {0} is null or empty", REQUEST_IP);
+            debug.warning("AM Neo4j Policy Plugin: Environment map {0} is null or empty", REQUEST_IP);
         }
         return ip;
     }
@@ -469,12 +469,12 @@ public class NeoUniversalCondition implements EntitlementCondition {
                 return results.get(0);
             }
         } catch(NoSuchRecordException ne){
-            debug.error("OpenAM Neo4j Policy Plugin: No records returned - " + ne.getMessage());
+            debug.error("AM Neo4j Policy Plugin: No records returned - " + ne.getMessage());
         } catch(Neo4jException | IllegalStateException e){
             debug.message("Error while connecting to neo4j: " + e.getMessage());
-            debug.error("OpenAM Neo4j Policy Plugin: Error while connecting to neo4j:  - " + e.getMessage());
+            debug.error("AM Neo4j Policy Plugin: Error while connecting to neo4j:  - " + e.getMessage());
             if (retry < this.QUERY_EXECUTION_MAX_RETRY) {
-                debug.error("OpenAM Neo4j Policy Plugin: retrying ... ");
+                debug.error("AM Neo4j Policy Plugin: retrying ... ");
                 closeDriver(driver);
                 driver = null;
                 return neoQuery(statement, params, ++retry);
@@ -491,16 +491,16 @@ public class NeoUniversalCondition implements EntitlementCondition {
         try {
             driver.close();
         } catch (Exception e) {
-            debug.warning("OpenAM Neo4j Policy Plugin: Error trying to close connection:  - " + e.getMessage());
+            debug.warning("AM Neo4j Policy Plugin: Error trying to close connection:  - " + e.getMessage());
         }
     }
 
     private Driver getDriver() {
-        Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.SEVERE, "hello this is Logger");
+        Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.INFO, "hello this is Logger");
         // TODO Auto-generated method stub
         if (driver != null)
             return driver;
-        debug.message("OpenAM Neo4j Policy Plugin: Creatnig a new driver");
+        debug.message("AM Neo4j Policy Plugin: Creating a new driver");
         if (dbURL.contains("bolt+routing")) {
             String[] uris = dbURL.split(",");
             List<URI> uriList = new ArrayList<>();
@@ -525,7 +525,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
             Set<String> envMapSet = (Set<String>) envMap;
             if (!envMapSet.isEmpty()) {
                 if (envMapSet.size() > 1) {
-                    debug.warning("OpenAM Neo4j Policy Plugin: Environment map {0} cardinality > 1. Using first from: {1}", param,
+                    debug.warning("AM Neo4j Policy Plugin: Environment map {0} cardinality > 1. Using first from: {1}", param,
                             envMapSet);
                 }
                 envMapStr = envMapSet.iterator().next();
@@ -535,7 +535,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
         }
 
         if (StringUtils.isBlank(envMapStr)) {
-            debug.warning("OpenAM Neo4j Policy Plugin: Environment map {0} is null or empty", param);
+            debug.warning("AM Neo4j Policy Plugin: Environment map {0} is null or empty", param);
         }
         return envMapStr;
 

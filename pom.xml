@@ -30,11 +30,11 @@
 
     <groupId>com.nulli.openam.plugins</groupId>
     <artifactId>openam-policy-eval-neo</artifactId>
-    <version>2.5.0-SNAPSHOT</version>
+    <version>2.6.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <properties>
-        <openam.version>13.5.0</openam.version>
+        <openam.version>6.0.0.3</openam.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -42,6 +42,14 @@
         <repository>
             <id>forgerock-private-releases</id>
             <url>http://maven.forgerock.org/repo/private-releases</url>
+        </repository>
+        <repository>
+            <id>forgerock-build-dependencies</id>
+            <name>ForgeRock Dependencies Repository</name>
+            <url>https://maven.forgerock.org/repo/forgerock-openam-${openam.version}-dependencies</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
         <repository>
             <id>forgerock-releases</id>
@@ -55,7 +63,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.forgerock.openam</groupId>
+            <groupId>org.forgerock.am</groupId>
             <artifactId>openam-entitlements</artifactId>
             <version>${openam.version}</version>
         </dependency>
@@ -72,16 +80,16 @@
         </dependency>
 
         <dependency>
-            <groupId>org.forgerock.openam</groupId>
+            <groupId>org.forgerock.am</groupId>
             <artifactId>openam-core</artifactId>
             <version>${openam.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-cli-impl</artifactId>
-            <version>${openam.version}</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.forgerock.am</groupId>-->
+            <!--<artifactId>openam-cli-impl</artifactId>-->
+            <!--<version>${openam.version}</version>-->
+        <!--</dependency>-->
 
         <dependency>
             <groupId>org.testng</groupId>

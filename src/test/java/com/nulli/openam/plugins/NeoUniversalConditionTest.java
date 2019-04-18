@@ -43,7 +43,7 @@ public class NeoUniversalConditionTest {
     		MockConnection con = new MockConnection();
     		con.setDBConnection(testClass);
     		con.setSubject(s);
-			String NEO_CYPHER_QUERY = "optional match p=(u:User {name: 'Ophelia'}) with case p when null then 'false' else 'true' end as result return result";
+			String NEO_CYPHER_QUERY = "optional match p=(u:User {name: 'George Clinton'}) with case p when null then 'false' else 'true' end as result return result";
 			String NEO_QUERY_PARAMS = "";
 	    	testClass.setCypherQuery(NEO_CYPHER_QUERY);
 	    	testClass.setParamsJson(NEO_QUERY_PARAMS);
@@ -79,12 +79,12 @@ public class NeoUniversalConditionTest {
     		MockConnection con = new MockConnection();
     		con.setDBConnection(testClass);
     		con.setSubject(s);
-			String NEO_CYPHER_QUERY = "optional match p=(u:User {name: 'Ophelia'}) with case p when null then 'false' else 'true' end as result return result";
+			String NEO_CYPHER_QUERY = "optional match p=(u:User {name: 'George Clinton'}) with case p when null then 'false' else 'true' end as result return result";
 			String NEO_QUERY_PARAMS = null;
 	    	testClass.setCypherQuery(NEO_CYPHER_QUERY);
 	    	testClass.setParamsJson(NEO_QUERY_PARAMS);
 			ConditionDecision testCondition = testClass.evaluate("/", s, "", null);
-			Assert.assertFalse(testCondition.isSatisfied());
+			Assert.assertTrue(testCondition.isSatisfied());
 		} catch (EntitlementException e) {
 			e.printStackTrace();
 		}
