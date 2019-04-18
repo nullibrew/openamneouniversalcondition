@@ -44,6 +44,7 @@ so that the policy editor shows the custom subject and condition.
                   "dbURL": "DB bolt Endpoint URL",
                   "dbUsername": "DB Username",
                   "dbPassword": "DB Password",
+                  "inlineParams": "Query inline Parameters (String)",
                   "cypherQuery": "Cypher Query",
                   "paramsJson": "Query Parameters (JSON)",
                   "allowCypherResult": "Cypher Result for Allow-Access",
@@ -174,17 +175,21 @@ that allows HTTP GET access to `"http://www.example.com:80/*"` and that makes us
         },
         "condition": {
             "type": "NeoUniversal",
-            "dbURL": "[DB bolt endpoint URL]",
+            "dbURL": "[DB bolt endpoint URL, routing is supported]",
             "dbUsername": "[Neo4j username]",
             "dbPassword": "[Neo4j password]",
             "cypherQuery": "[Cypher-language query - assume it returns 'return' which is 'true' or 'false']",
             "paramsJson": {"[PARAM_NAME]": "[PARAM_VALUE]", ...},
+            "inlineParams": "PARAM_NAME1,PARAM_NAME2,...",
             "allowCypherResult": "true",
             "denyCypherResult": "false"
         }
     }
 
 To test the Neo Universal Condition plugin, try accessing the resource at "http://www.example.com:80/index.html", authenticate and see if access decision matches the condition enforced by the Neo Universal Plugin. The bolt endpoint for neo4j on localhost is "bolt://localhost".
+
+### Bolt routing
+-Strating from 2.5.0, this plugin supports bolt routing. In 2.1.0, you can have only one bolt url as the value of dbURL, e.g., `bolt://170.44.12.87:7687`. This means even in a cluster environment, 2.1.0 can only work with one node. Support for `bolt+routing` protocol was added in 2.5.0. Now you can have a comma separated connection string as the dbURL, e.g.,`bolt+routing://170.44.12.87:7687,bolt+routing://170.44.12.55:7687`.
 
 ### Supported Parameters
 The "cypherQuery" field of the Policy Neo4jUniversalCondition can be parameterized, i.e., it uses [PARAM\_NAME]'s and these params are declared in the "paramsJson" which holds a mapping of [PARAM\_NAME] to [PARAM\_VALUE] pairs. Here is the list of [PARAM\_VALUE]'s that can be passed.
@@ -197,7 +202,9 @@ The "cypherQuery" field of the Policy Neo4jUniversalCondition can be parameteriz
 * "\_\_token.{{XX}}": SSO Token method XX (for authenticated subjects only)
 * "\_\_req\_\_{{XX}}": request parameter XX (if applicable)
 
-
+### Inline parameters
+By default, parameters from the cypherQuery will be sent to Neo4j as parameters. However sometimes you want to replace a variable in the query with its value before sending the query to Neo4j. A typical usecase is when a node property name is a variable. In those cases, you can use inline parameters. You still need to have a mapping in cypherQuery for each inline parameter. Let's say there are `__env__resource_name: resource_name` and `__env__action: action`" in the cypher query
+and you want the plugin to replaces their value in the query before sending the query to Neo4j. All you need to do is to add `resource_name,action` to inlineParams. The support for this feature was added in 2.5.0.
 
 * * * * *
 
