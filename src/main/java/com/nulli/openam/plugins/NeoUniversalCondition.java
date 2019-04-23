@@ -386,7 +386,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
                             paramVal = realm;
                         } else if (paramVal.startsWith("__env__")) {
                             String envParam = paramVal.substring(7);
-                            String envParamVal = envMapStringify(envParam, env.get(envParam));
+                            String envParamVal = envMapStringify(envParam, env.get(envParam));x
                             paramVal = envParamVal;
                         } else if (paramVal.startsWith("__token")) {
                             if (subject.getPrivateCredentials().isEmpty()) {
