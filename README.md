@@ -8,9 +8,12 @@ This project introduces an OpenAM environment condition plugin, named Neo Univer
 Before building the plugin,
 update the POM property `<openam.version>` to match your OpenAM version.
 
+Also please refer to the following ForgeRock's Knowledge Base article in order to be able to download the dependencies:
+https://backstage.forgerock.com/knowledge/kb/article/a74096897
+
 The line to update is:
 
-    <openam.version>13.0.0-SNAPSHOT</openam.version>
+	<openam.version>6.0.0.3</openam.version>
 
 Build the plugin using Apache Maven.
 
