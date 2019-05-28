@@ -96,6 +96,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
     private String allowCypherResult = null;
     private String denyCypherResult = null;
     private String displayType;
+    private static Logger logger = Logger.getLogger(NeoUniversalCondition.class.getName());
 
     /**
      * Constructs a new NeoUniversalCondition instance.
@@ -238,7 +239,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
             jo.put(NEO_ALLOW_RESULT, allowCypherResult);
             jo.put(NEO_DENY_RESULT, denyCypherResult);
         } catch (JSONException ex) {
-            debug.error("AM Neo4j Policy Plugin: failed to get state - " + ex.getMessage());
+            logger.log(Level.SEVERE, "AM Neo4j Policy Plugin: failed to get state - " + ex.getMessage());
         }
         return jo.toString();
     }
@@ -282,7 +283,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
             }
 
         } catch (JSONException e) {
-            debug.error("AM Neo4j Policy Plugin: failed to set state - " + e.getMessage());
+            logger.log(Level.SEVERE, "AM Neo4j Policy Plugin: failed to set state - " + e.getMessage());
         }
     }
 
@@ -311,10 +312,10 @@ public class NeoUniversalCondition implements EntitlementCondition {
                 }
             }
             catch (ConnectionException ex) {
-                debug.error("AM Neo4j Policy Plugin: Connection to Neo4j failed - " + ex.getMessage());
+                logger.log(Level.SEVERE, "AM Neo4j Policy Plugin: Connection to Neo4j failed - " + ex.getMessage());
             }
             catch (JSONException ex) {
-                debug.error("AM Neo4j Policy Plugin:Cannot parse parameters in the policy evaluation request body - " + ex.getMessage());
+                logger.log(Level.SEVERE, "AM Neo4j Policy Plugin: Cannot parse parameters in the policy evaluation request body - " + ex.getMessage());
             }
         }
 
@@ -417,7 +418,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
                 }
             }
         } catch (JSONException | SSOException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException  ex) {
-            debug.error("AM Neo4j Policy Plugin: " + ex.getMessage());
+            logger.log(Level.SEVERE, "AM Neo4j Policy Plugin: " + ex.getMessage());
         }
         return sanitizedParams;
     }
@@ -469,12 +470,11 @@ public class NeoUniversalCondition implements EntitlementCondition {
                 return results.get(0);
             }
         } catch(NoSuchRecordException ne){
-            debug.error("AM Neo4j Policy Plugin: No records returned - " + ne.getMessage());
+            logger.log(Level.SEVERE, "AM Neo4j Policy Plugin: No records returned - " + ne.getMessage());
         } catch(Neo4jException | IllegalStateException e){
-            debug.message("Error while connecting to neo4j: " + e.getMessage());
-            debug.error("AM Neo4j Policy Plugin: Error while connecting to neo4j:  - " + e.getMessage());
+            logger.log(Level.SEVERE, "AM Neo4j Policy Plugin: Error while connecting to neo4j: " + e.getMessage());
             if (retry < this.QUERY_EXECUTION_MAX_RETRY) {
-                debug.error("AM Neo4j Policy Plugin: retrying ... ");
+                logger.log(Level.INFO, "AM Neo4j Policy Plugin: retrying ...");
                 closeDriver(driver);
                 driver = null;
                 return neoQuery(statement, params, ++retry);
@@ -491,16 +491,21 @@ public class NeoUniversalCondition implements EntitlementCondition {
         try {
             driver.close();
         } catch (Exception e) {
-            debug.warning("AM Neo4j Policy Plugin: Error trying to close connection:  - " + e.getMessage());
+            logger.log(Level.SEVERE, "AM Neo4j Policy Plugin: Error trying to close connection:  - " + e.getMessage());
         }
     }
 
     private Driver getDriver() {
-        Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.INFO, "hello this is Logger");
+//        Logger.getLogger(NeoUniversalCondition.class.getName()).log(Level.INFO, "hello this is Logger");
+//        logger.log(Level.INFO, "hello this is Logger");
         // TODO Auto-generated method stub
-        if (driver != null)
+        logger.log(Level.INFO, "AM Neo4j Policy Plugin: a Neo4j driver was requested");
+        if (driver != null) {
+            logger.log(Level.INFO, "AM Neo4j Policy Plugin: an existing driver was returned");
             return driver;
-        debug.message("AM Neo4j Policy Plugin: Creating a new driver");
+        }
+
+        logger.log(Level.INFO, "AM Neo4j Policy Plugin: a new driver will be created an returned");
         if (dbURL.contains("bolt+routing")) {
             String[] uris = dbURL.split(",");
             List<URI> uriList = new ArrayList<>();
