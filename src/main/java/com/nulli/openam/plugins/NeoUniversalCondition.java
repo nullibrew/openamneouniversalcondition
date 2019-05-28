@@ -85,7 +85,7 @@ public class NeoUniversalCondition implements EntitlementCondition {
     private final CoreWrapper coreWrapper;
     private final Debug debug;
     private final EntitlementCoreWrapper entitlementCoreWrapper;
-    private Driver driver;
+    private static Driver driver;
 
     private String dbURL = null;
     private String dbUsername = null;
